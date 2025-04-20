@@ -2,7 +2,7 @@
 library(dplyr)
 library(ggplot2)
 
-data <- read.csv("MultipleFiles/FastFoodNutritionMenuV2.csv", stringsAsFactors = FALSE)
+data <- read.csv("C:/Users/adas2/Downloads/FastFoodNutritionMenuV2.csv", stringsAsFactors = FALSE)
 
 highest_calories_item <- data[which.max(data$Calories), ]
 print("Item with the highest calories:")
