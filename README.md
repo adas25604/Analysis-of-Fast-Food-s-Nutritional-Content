@@ -9,10 +9,10 @@ print("Item with the highest calories:")
 print(highest_calories_item)
 
 average_calories <- data %>%
-  group_by(Company) %>%
+  group_by(Resturants) %>%
   summarise(Average_Calories = mean(Calories, na.rm = TRUE))
 
-print("Average calories per item of all companies:")
+print("Average calories per item of all resturants:")
 print(average_calories)
 
 comparison_table <- data %>%
