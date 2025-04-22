@@ -1,53 +1,134 @@
+# Load necessary libraries
 library(dplyr)
 library(ggplot2)
+library(readr)
 
-data <- read.csv("C:/Users/adas2/Downloads/FastFoodNutritionMenuV2.csv", stringsAsFactors = FALSE)
+# Read the CSV file
+data <- read_csv("FastFoodNutritionMenuV2.csv")
 
-highest_calories_item <- data[which.max(data$Calories), ]
-print("Item with the highest calories:")
-print(highest_calories_item)
+# Clean column names for easier access
+colnames(data) <- c("Company", "Item", "Calories", "Calories_from_Fat", "Total_Fat_g", 
+                    "Saturated_Fat_g", "Trans_Fat_g", "Cholesterol_mg", "Sodium_mg", 
+                    "Carbs_g", "Fiber_g", "Sugars_g", "Protein_g", "Weight_Watchers_Pnts")
 
-average_calories <- data %>%
-  group_by(Resturants) %>%
-  summarise(Average_Calories = mean(Calories, na.rm = TRUE))
-
-print("Average calories per item of all resturants:")
-print(average_calories)
-
-comparison_table <- data %>%
-  summarise(
-    Average_Sodium = mean(Sodium, na.rm = TRUE),
-    Average_Fat = mean(`Total Fat (g)`, na.rm = TRUE),
-    Average_Cholesterol = mean(Cholesterol, na.rm = TRUE),
-    Average_Carbs = mean(Carbs, na.rm = TRUE)
+# Ensure numeric columns are properly formatted
+data <- data %>%
+  mutate(
+    Calories = as.numeric(Calories),
+    Total_Fat_g = as.numeric(Total_Fat_g),
+    Cholesterol_mg = as.numeric(Cholesterol_mg),
+    Sodium_mg = as.numeric(Sodium_mg),
+    Carbs_g = as.numeric(Carbs_g)
   )
 
-print("Average Sodium, Fat, Cholesterol, and Carbs:")
-print(comparison_table)
+# 1. Item with the highest calories
+highest_calorie_item <- data %>%
+  filter(Calories == max(Calories, na.rm = TRUE)) %>%
+  select(Company, Item, Calories)
 
+# 2. Average calories per item across all companies
+avg_calories <- data %>%
+  group_by(Company) %>%
+  summarise(Avg_Calories = mean(Calories, na.rm = TRUE)) %>%
+  ungroup()
+avg_fat <- data %>%
+  group_by(Company) %>%
+  summarise(Avg_fat = mean(Total_Fat_g, na.rm = TRUE)) %>%
+  ungroup()
+cat("\nAverage fat per Item by Company:\n")
+print(avg_fat)
+highest_fat_item <- data %>%
+  filter(Total_Fat_g == max(Total_Fat_g, na.rm = TRUE)) %>%
+  select(Company, Item, Total_Fat_g)
+cat("Item with Highest fat:\n")
+print(highest_fat_item)
+# cholesterol
+avg_cholestrol <- data %>%
+  group_by(Company) %>%
+  summarise(Avg_cholestrol = mean(Cholesterol_mg, na.rm = TRUE)) %>%
+  ungroup()
+cat("\nAverage cholsetrol per Item by Company:\n")
+print(avg_cholestrol)
+highest_cholestrol_item <- data %>%
+  filter(Cholesterol_mg == max(Cholesterol_mg, na.rm = TRUE)) %>%
+  select(Company, Item, Cholesterol_mg)
+cat("Item with Highest cholestrol:\n")
+print(highest_cholestrol_item)
+# sodium
+avg_sodium <- data %>%
+  group_by(Company) %>%
+  summarise(Avg_sodium = mean(Sodium_mg, na.rm = TRUE)) %>%
+  ungroup()
+cat("\nAverage sodium per Item by Company:\n")
+print(avg_sodium)
+highest_sodium_item <- data %>%
+  filter(Sodium_mg == max(Sodium_mg, na.rm = TRUE)) %>%
+  select(Company, Item, Sodium_mg)
+cat("Item with Highest sodium:\n")
+print(highest_sodium_item)
+# carbs
+avg_carbs <- data %>%
+  group_by(Company) %>%
+  summarise(Avg_carbs = mean(Carbs_g, na.rm = TRUE)) %>%
+  ungroup()
+cat("\nAverage carbs per Item by Company:\n")
+print(avg_carbs)
+highest_carbs_item <- data %>%
+  filter(Carbs_g == max(Carbs_g, na.rm = TRUE)) %>%
+  select(Company, Item, Carbs_g)
+cat("Item with Highest carbs:\n")
+print(highest_carbs_item)
+# 3. Summary statistics for Sodium, Total Fat, Cholesterol, and Carbs
+nutrition_summary <- data %>%
+  summarise(
+    Mean_Sodium_mg = mean(Sodium_mg, na.rm = TRUE),
+    Mean_Total_Fat_g = mean(Total_Fat_g, na.rm = TRUE),
+    Mean_Cholesterol_mg = mean(Cholesterol_mg, na.rm = TRUE),
+    Mean_Carbs_g = mean(Carbs_g, na.rm = TRUE),
+    SD_Sodium_mg = sd(Sodium_mg, na.rm = TRUE),
+    SD_Total_Fat_g = sd(Total_Fat_g, na.rm = TRUE),
+    SD_Cholesterol_mg = sd(Cholesterol_mg, na.rm = TRUE),
+    SD_Carbs_g = sd(Carbs_g, na.rm = TRUE)
+  )
+
+
+
+
+# 4. Histograms for Calories, Sodium, Total Fat, Cholesterol, and Carbs
+# Calories Histogram
 ggplot(data, aes(x = Calories)) +
   geom_histogram(binwidth = 50, fill = "blue", color = "black") +
-  labs(title = "Histogram of Calories", x = "Calories", y = "Frequency") +
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "Histogram of Calories", x = "Calories", y = "Frequency")
 
-ggplot(data, aes(x = Sodium)) +
+# Sodium Histogram
+ggplot(data, aes(x = Sodium_mg)) +
   geom_histogram(binwidth = 100, fill = "green", color = "black") +
-  labs(title = "Histogram of Sodium", x = "Sodium (mg)", y = "Frequency") +
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "_histogram of Sodium (mg)", x = "Sodium (mg)", y = "Frequency")
 
-ggplot(data, aes(x = `Total Fat (g)`)) +
+# Total Fat Histogram
+ggplot(data, aes(x = Total_Fat_g)) +
   geom_histogram(binwidth = 5, fill = "red", color = "black") +
-  labs(title = "Histogram of Total Fat", x = "Total Fat (g)", y = "Frequency") +
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "Histogram of Total Fat (g)", x = "Total Fat (g)", y = "Frequency")
 
-ggplot(data, aes(x = Cholesterol)) +
-  geom_histogram(binwidth = 20, fill = "purple", color = "black") +
-  labs(title = "Histogram of Cholesterol", x = "Cholesterol (mg)", y = "Frequency") +
-  theme_minimal()
+# Cholesterol Histogram
+ggplot(data, aes(x = Cholesterol_mg)) +
+  geom_histogram(binwidth = 10, fill = "purple", color = "black") +
+  theme_minimal() +
+  labs(title = "Histogram of Cholesterol (mg)", x = "Cholesterol (mg)", y = "Frequency")
 
-ggplot(data, aes(x = Carbs)) +
-  geom_histogram(binwidth = 10, fill = "orange", color = "black") +
-  labs(title = "Histogram of Carbs", x = "Carbs (g)", y = "Frequency") +
-  theme_minimal()
+# Carbs Histogram
+ggplot(data, aes(x = Carbs_g)) +
+  geom_histogram(binwidth = 5, fill = "orange", color = "black") +
+  theme_minimal() +
+  labs(title = "Histogram of Carbohydrates (g)", x = "Carbohydrates (g)", y = "Frequency")
 
-dev.off()
+# Print results
+cat("Item with Highest Calories:\n")
+print(highest_calorie_item)
+cat("\nAverage Calories per Item by Company:\n")
+print(avg_calories)
+cat("\nSummary Statistics for Sodium, Total Fat, Cholesterol, and Carbs:\n")
+print(nutrition_summary)
