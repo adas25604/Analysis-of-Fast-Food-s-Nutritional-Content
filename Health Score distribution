@@ -1,0 +1,67 @@
+library(dplyr)
+
+# Read data
+fastfood_data <- read.csv("FastFoodNutritionMenuV2.csv")
+
+# Print actual column names for reference
+cat("Actual columns in your dataset:\n")
+print(names(fastfood_data))
+
+# Find nutrient columns using flexible matching
+find_nutrient_col <- function(data, patterns) {
+  for (p in patterns) {
+    col <- grep(p, names(data), ignore.case = TRUE, value = TRUE)
+    if (length(col) > 0) return(col[1])
+  }
+  return(NA)
+}
+
+# Define column names (try common variations)
+col_calories <- find_nutrient_col(fastfood_data, c("calor", "kcal"))
+col_protein <- find_nutrient_col(fastfood_data, c("protein", "prot"))
+col_sugars <- find_nutrient_col(fastfood_data, c("sugar", "sugars"))
+col_sodium <- find_nutrient_col(fastfood_data, c("sodium", "salt"))
+
+# Check which columns were found
+cat("\nIdentified columns:\n")
+cat("Calories:", ifelse(is.na(col_calories), "NOT FOUND", col_calories), "\n")
+cat("Protein:", ifelse(is.na(col_protein), "NOT FOUND", col_protein), "\n")
+cat("Sugars:", ifelse(is.na(col_sugars), "NOT FOUND", col_sugars), "\n")
+cat("Sodium:", ifelse(is.na(col_sodium), "NOT FOUND", col_sodium), "\n")
+
+# Only proceed if we found the essential columns
+if (any(is.na(c(col_calories, col_protein, col_sugars, col_sodium)))) {
+  stop("Essential columns missing. Please check your data and column names.")
+}
+
+# Calculate metrics
+fastfood_scored <- fastfood_data %>%
+  select(
+    item = 1,  # First column is assumed to be item name
+    calories = all_of(col_calories),
+    protein = all_of(col_protein),
+    sugars = all_of(col_sugars),
+    sodium = all_of(col_sodium)
+  ) %>%
+  mutate(across(-item, as.numeric)) %>%
+  filter(complete.cases(.)) %>%
+  mutate(
+    calories_per_protein = ifelse(protein > 0, calories/protein, NA),
+    health_score = (protein - (sugars + sodium/1000))/100  # Simple health metric
+  ) %>%
+  arrange(desc(health_score))
+
+# View results
+head(fastfood_scored, 10)
+
+# Simple visualization
+if (nrow(fastfood_scored) > 0) {
+  library(ggplot2)
+  ggplot(fastfood_scored, aes(x = health_score)) +
+    geom_histogram(fill = "lightblue", bins = 20) +
+    labs(title = "Health Score Distribution", 
+         x = "Health Score (higher is better)", 
+         y = "Count")
+} else {
+  message("No complete cases found for calculation.")
+}
