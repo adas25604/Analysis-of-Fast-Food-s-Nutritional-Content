@@ -1,0 +1,67 @@
+# Load necessary libraries
+library(tidyverse)
+library(caTools)
+
+# Load the data
+food_data <- read.csv("FastFoodNutritionMenuV2.csv")
+
+# Clean and prepare the data
+clean_data <- food_data %>%
+  # Convert nutrition columns to numeric (they might be read as factors)
+  mutate(across(c(Calories, Total.Fat..g., Saturated.Fat..g., Carbs..g., Protein..g.), 
+                ~ as.numeric(as.character(.)))) %>%
+  # Create binary outcome
+  mutate(high_calorie = as.factor(ifelse(Calories > 500, 1, 0))) %>%
+  # Select only the columns we need
+  select(high_calorie, 
+         Total.Fat..g., 
+         Saturated.Fat..g.,
+         Carbs..g.,
+         Protein..g.) %>%
+  # Remove any rows with missing values
+  drop_na()
+
+# Split data into training (70%) and test (30%) sets
+set.seed(123)
+split <- sample.split(clean_data$high_calorie, SplitRatio = 0.7)
+train_data <- subset(clean_data, split == TRUE)
+test_data <- subset(clean_data, split == FALSE)
+
+# Build logistic regression model
+model <- glm(high_calorie ~ ., 
+             family = binomial(link = "logit"),
+             data = train_data)
+
+# View model summary
+summary(model)
+
+# Make predictions on test set
+# First ensure test data has same structure as training
+test_data <- test_data %>%
+  select(all_of(names(train_data))) # Keep only columns used in training
+
+test_data$predicted_prob <- predict(model, newdata = test_data, type = "response")
+test_data$predicted_class <- ifelse(test_data$predicted_prob > 0.5, 1, 0)
+
+# Create confusion matrix
+confusion_matrix <- table(Actual = test_data$high_calorie, 
+                          Predicted = test_data$predicted_class)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+
+# Print results
+print("Confusion Matrix:")
+print(confusion_matrix)
+print(paste("Accuracy:", round(accuracy, 3)))
+
+# Visualization
+ggplot(train_data, aes(x = Total.Fat..g., y = as.numeric(as.character(high_calorie)))) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"),
+              se = FALSE) +
+  labs(title = "Probability of High-Calorie Item by Total Fat",
+       x = "Total Fat (g)",
+       y = "Probability of High-Calorie") +
+  theme_minimal()
